@@ -1,0 +1,534 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Eddebou Delivery API",
+    "description": "API documentation for the Eddebou delivery management system",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "API base URL"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "DeliveryStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "ASSIGNED",
+          "PICKED_UP",
+          "IN_TRANSIT",
+          "ARRIVING",
+          "DELIVERED",
+          "COMPLETED",
+          "RETURNED",
+          "CANCELLED",
+          "FAILED"
+        ]
+      },
+      "AdditionalTax": {
+        "type": "object",
+        "properties": {
+          "taxName": {
+            "type": "string",
+            "description": "Name of the tax"
+          },
+          "rate": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Tax rate percentage"
+          }
+        },
+        "required": ["taxName", "rate"]
+      },
+      "DeliveryItem": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "ID of the inventory item"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Quantity of items"
+          },
+          "unitPrice": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Unit price"
+          },
+          "taxRate": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Tax rate for this item"
+          }
+        },
+        "required": ["itemId", "quantity", "unitPrice", "taxRate"]
+      },
+      "DeliveryLocation": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Address of the delivery location"
+          },
+          "city": {
+            "type": "string",
+            "description": "City of the delivery location"
+          },
+          "state": {
+            "type": "string",
+            "description": "State of the delivery location"
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "Postal code of the delivery location"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country of the delivery location"
+          }
+        },
+        "required": ["address", "city", "state", "postalCode", "country"]
+      },
+      "CreateDeliveryRequest": {
+        "type": "object",
+        "properties": {
+          "customerName": {
+            "type": "string",
+            "description": "Customer name"
+          },
+          "customerEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Customer email"
+          },
+          "customerPhone": {
+            "type": "string",
+            "description": "Customer phone number"
+          },
+          "deliveryLocation": {
+            "$ref": "#/components/schemas/DeliveryLocation"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeliveryItem"
+            }
+          },
+          "deliveryCompanyId": {
+            "type": "string",
+            "description": "Delivery company ID"
+          },
+          "vatRate": {
+            "type": "number",
+            "minimum": 0,
+            "description": "VAT rate percentage"
+          },
+          "additionalTaxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdditionalTax"
+            }
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes"
+          },
+          "preferredDeliveryDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Preferred delivery date"
+          }
+        },
+        "required": ["customerName", "customerEmail", "customerPhone", "deliveryLocation", "items", "deliveryCompanyId", "vatRate"]
+      },
+      "UpdateDeliveryRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/DeliveryStatus"
+          },
+          "statusNotes": {
+            "type": "string",
+            "description": "Notes about the status update"
+          },
+          "statusLocation": {
+            "type": "object",
+            "properties": {
+              "coordinates": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "address": {
+                "type": "string"
+              }
+            }
+          },
+          "trackingNumber": {
+            "type": "string"
+          },
+          "isReconciled": {
+            "type": "boolean"
+          },
+          "reconciledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reconciledBy": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "DeliveryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "delivery": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "$ref": "#/components/schemas/DeliveryStatus"
+                  },
+                  "customerId": {
+                    "type": "string"
+                  },
+                  "customerEmail": {
+                    "type": "string"
+                  },
+                  "customerPhone": {
+                    "type": "string"
+                  },
+                  "deliveryLocation": {
+                    "$ref": "#/components/schemas/DeliveryLocation"
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DeliveryItem"
+                    }
+                  },
+                  "deliveryCompanyId": {
+                    "type": "string"
+                  },
+                  "vatRate": {
+                    "type": "number"
+                  },
+                  "additionalTaxes": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/AdditionalTax"
+                    }
+                  },
+                  "notes": {
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "DeliveriesResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "deliveries": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DeliveryResponse"
+                }
+              },
+              "total": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              },
+              "totalPages": {
+                "type": "number"
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/deliveries": {
+      "post": {
+        "summary": "Create a new delivery",
+        "tags": ["Deliveries"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDeliveryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Delivery created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all deliveries with filters",
+        "tags": ["Deliveries"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by invoice number, client name, or email"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "$ref": "#/components/schemas/DeliveryStatus"
+            }
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "in": "query",
+            "name": "isReconciled",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns all deliveries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveriesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deliveries/{id}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Delivery ID"
+        }
+      ],
+      "get": {
+        "summary": "Get a delivery by ID",
+        "tags": ["Deliveries"],
+        "responses": {
+          "200": {
+            "description": "Returns a delivery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a delivery",
+        "tags": ["Deliveries"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDeliveryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a delivery",
+        "tags": ["Deliveries"],
+        "responses": {
+          "200": {
+            "description": "Delivery deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deliveries/{id}/status": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Delivery ID"
+        }
+      ],
+      "put": {
+        "summary": "Update delivery status",
+        "tags": ["Deliveries"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "$ref": "#/components/schemas/DeliveryStatus"
+                  }
+                },
+                "required": ["status"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+} 

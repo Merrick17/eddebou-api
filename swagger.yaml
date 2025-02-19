@@ -1,0 +1,812 @@
+openapi: 3.0.0
+info:
+  title: Eddebou API
+  description: API documentation for Eddebou inventory management system
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        twoFactorToken:
+          type: string
+          description: Required if 2FA is enabled
+        ip:
+          type: string
+        userAgent:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            email:
+              type: string
+            role:
+              type: string
+              enum: [admin, user]
+            requiresTwoFactor:
+              type: boolean
+            twoFactorEnabled:
+              type: boolean
+        accessToken:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [admin, user]
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+
+    Permission:
+      type: object
+      properties:
+        service:
+          type: string
+          enum:
+            - users
+            - deliveries
+            - movements
+            - inventory
+            - products
+            - categories
+            - suppliers
+            - customers
+            - warehouses
+            - reports
+            - settings
+            - roles
+            - audit-logs
+        actions:
+          type: array
+          items:
+            type: string
+            enum: [create, read, update, delete, export, import]
+
+    TwoFactorSetupResponse:
+      type: object
+      properties:
+        secret:
+          type: string
+        qrCode:
+          type: string
+          description: Base64 encoded QR code image
+
+    TwoFactorVerifyRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          description: 6-digit TOTP token
+
+    SessionInfo:
+      type: object
+      properties:
+        userId:
+          type: string
+        token:
+          type: string
+        deviceInfo:
+          type: object
+          properties:
+            ip:
+              type: string
+            userAgent:
+              type: string
+            deviceId:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastActivity:
+          type: string
+          format: date-time
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    LoginDto:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          minLength: 6
+          example: password123
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              example: 507f1f77bcf86cd799439011
+            name:
+              type: string
+              example: John Doe
+            email:
+              type: string
+              example: john@example.com
+            role:
+              type: string
+              enum: [admin, user]
+
+    CreateInventoryItemDto:
+      type: object
+      required:
+        - name
+        - sku
+        - category
+        - minStock
+        - maxStock
+        - unitPrice
+      properties:
+        name:
+          type: string
+          example: Laptop
+        sku:
+          type: string
+          example: LAP-001
+        description:
+          type: string
+          example: High-performance business laptop
+        category:
+          type: string
+          example: electronics
+        minStock:
+          type: number
+          minimum: 0
+          example: 10
+        maxStock:
+          type: number
+          minimum: 0
+          example: 100
+        unitPrice:
+          type: number
+          minimum: 0
+          example: 999.99
+        supplier:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        location:
+          type: string
+          example: 507f1f77bcf86cd799439012
+
+    CreateStockMovementDto:
+      type: object
+      required:
+        - itemId
+        - type
+        - quantity
+        - reason
+        - locationId
+        - date
+      properties:
+        itemId:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        type:
+          type: string
+          enum: [inbound, outbound]
+        quantity:
+          type: number
+          minimum: 1
+          example: 10
+        reason:
+          type: string
+          example: Restocking
+        locationId:
+          type: string
+          example: 507f1f77bcf86cd799439012
+        date:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          example: Regular inventory update
+
+    CreateDeliveryDto:
+      type: object
+      required:
+        - invoiceNumber
+        - clientName
+        - clientEmail
+        - deliveryDate
+        - items
+        - shippingAddress
+      properties:
+        invoiceNumber:
+          type: string
+          example: INV-001
+        clientName:
+          type: string
+          example: Client Corp
+        clientEmail:
+          type: string
+          format: email
+          example: client@example.com
+        deliveryDate:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              itemId:
+                type: string
+              quantity:
+                type: number
+                minimum: 1
+        shippingAddress:
+          type: string
+          example: 789 Client St
+        deliveryCompanyId:
+          type: string
+        notes:
+          type: string
+
+    CreateSupplierDto:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+        - address
+      properties:
+        name:
+          type: string
+          example: "Tech Supplies Inc"
+        email:
+          type: string
+          format: email
+          example: "contact@techsupplies.com"
+        phone:
+          type: string
+          example: "+1234567890"
+        address:
+          type: string
+          example: "123 Tech Street"
+        notes:
+          type: string
+          example: "Preferred supplier for electronics"
+        status:
+          type: string
+          enum: [active, inactive]
+          default: active
+        contactPerson:
+          type: string
+          example: "John Smith"
+        paymentTerms:
+          type: string
+          example: "Net 30"
+        taxId:
+          type: string
+          example: "TAX123456"
+
+    UpdateSupplierDto:
+      allOf:
+        - $ref: '#/components/schemas/CreateSupplierDto'
+        - type: object
+          properties:
+            rating:
+              type: number
+              minimum: 0
+              maximum: 5
+              example: 4.5
+
+    SupplierQueryDto:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          default: 10
+        search:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    CreateLocationDto:
+      type: object
+      required:
+        - name
+        - type
+        - address
+        - capacity
+      properties:
+        name:
+          type: string
+          example: "Main Warehouse"
+        type:
+          type: string
+          enum: [warehouse, store, distribution-center]
+          example: warehouse
+        address:
+          type: string
+          example: "123 Storage St"
+        capacity:
+          type: number
+          minimum: 0
+          example: 1000
+        contactPerson:
+          type: string
+          example: "John Smith"
+        contactPhone:
+          type: string
+          example: "+1234567890"
+
+    UpdateLocationDto:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        capacity:
+          type: number
+          minimum: 0
+        type:
+          type: string
+          enum: [warehouse, store, distribution_center]
+        status:
+          type: string
+          enum: [active, inactive]
+        contactPerson:
+          type: string
+        contactPhone:
+          type: string
+
+    CreateDeliveryCompanyDto:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+        - address
+        - status
+        - rating
+      properties:
+        name:
+          type: string
+          example: "Fast Delivery Co"
+        email:
+          type: string
+          format: email
+          example: "contact@fastdelivery.com"
+        phone:
+          type: string
+          example: "+1234567890"
+        address:
+          type: string
+          example: "456 Delivery Ave"
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+          example: active
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+          example: 4.5
+
+    UpdateDeliveryCompanyDto:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+
+    CreateUserDto:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - role
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        password:
+          type: string
+          minLength: 6
+          example: "password123"
+        role:
+          type: string
+          enum: [admin, user]
+          example: "user"
+        status:
+          type: string
+          enum: [active, inactive]
+          default: active
+
+    UpdateUserDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        role:
+          type: string
+          enum: [admin, user]
+        status:
+          type: string
+          enum: [active, inactive]
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          example: "john@example.com"
+        role:
+          type: string
+          enum: [admin, user]
+        status:
+          type: string
+          enum: [active, inactive]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      security: []
+      summary: Login to the system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        200:
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        401:
+          description: Invalid credentials or 2FA required
+
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      security: []
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        201:
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        400:
+          description: Invalid input or email already exists
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout and invalidate current session
+      responses:
+        200:
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      responses:
+        200:
+          description: New tokens generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+
+  /auth/password-reset:
+    post:
+      tags:
+        - Authentication
+      security: []
+      summary: Request password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        200:
+          description: Reset email sent if account exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /auth/password-reset/verify:
+    post:
+      tags:
+        - Authentication
+      security: []
+      summary: Reset password using token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 6
+      responses:
+        200:
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /2fa/generate:
+    post:
+      tags:
+        - Two-Factor Authentication
+      summary: Generate 2FA secret and QR code
+      responses:
+        200:
+          description: 2FA setup information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorSetupResponse'
+
+  /2fa/enable:
+    post:
+      tags:
+        - Two-Factor Authentication
+      summary: Enable 2FA after verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorVerifyRequest'
+      responses:
+        200:
+          description: 2FA enabled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /2fa/disable:
+    post:
+      tags:
+        - Two-Factor Authentication
+      summary: Disable 2FA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorVerifyRequest'
+      responses:
+        200:
+          description: 2FA disabled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /2fa/verify:
+    post:
+      tags:
+        - Two-Factor Authentication
+      summary: Verify 2FA token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorVerifyRequest'
+      responses:
+        200:
+          description: Token verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /sessions:
+    get:
+      tags:
+        - Session Management
+      summary: Get all active sessions for current user
+      responses:
+        200:
+          description: List of active sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionInfo'
+
+  /sessions/current:
+    delete:
+      tags:
+        - Session Management
+      summary: Invalidate current session
+      responses:
+        200:
+          description: Session invalidated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /sessions/all:
+    delete:
+      tags:
+        - Session Management
+      summary: Invalidate all sessions for current user
+      responses:
+        200:
+          description: All sessions invalidated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /sessions/{token}:
+    delete:
+      tags:
+        - Session Management
+      summary: Invalidate specific session
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Session invalidated or not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+tags:
+  - name: Authentication
+    description: Authentication and user management endpoints
+  - name: Two-Factor Authentication
+    description: 2FA setup and verification endpoints
+  - name: Session Management
+    description: Session tracking and management endpoints
