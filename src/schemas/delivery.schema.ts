@@ -63,8 +63,13 @@ export class DeliveryTracking {
 
 @Schema()
 export class DeliveryItem {
-  @Prop({ required: true, type: MongooseSchema.Types.ObjectId, ref: 'InventoryItem' })
-  productId: string;
+  @Prop({ 
+    required: true, 
+    type: MongooseSchema.Types.ObjectId, 
+    ref: 'InventoryItem',
+    autopopulate: true 
+  })
+  itemId: string;
 
   @Prop({ required: true, min: 1 })
   quantity: number;
@@ -190,10 +195,13 @@ export class ProofOfDelivery {
   notes?: string;
 }
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } })
 export class Delivery {
   @Prop({ required: true, unique: true })
   invoiceNumber: string;
+
+  @Prop()
+  trackingNumber?: string;
 
   @Prop({ required: true })
   customerName: string;
@@ -207,7 +215,7 @@ export class Delivery {
   @Prop({ type: DeliveryLocation, required: true })
   deliveryLocation: DeliveryLocation;
 
-  @Prop({ type: [DeliveryItem], required: true })
+  @Prop({ type: [{ type: DeliveryItem }], required: true })
   items: DeliveryItem[];
 
   @Prop({ required: true, type: MongooseSchema.Types.ObjectId, ref: 'DeliveryCompany' })
@@ -244,4 +252,17 @@ export class Delivery {
   updatedAt: Date;
 }
 
-export const DeliverySchema = SchemaFactory.createForClass(Delivery); 
+export const DeliverySchema = SchemaFactory.createForClass(Delivery);
+
+// Configure population for items.itemId
+DeliverySchema.pre('find', function() {
+  this.populate('items.itemId');
+});
+
+DeliverySchema.pre('findOne', function() {
+  this.populate('items.itemId');
+});
+
+DeliverySchema.pre('findOneAndUpdate', function() {
+  this.populate('items.itemId');
+}); 

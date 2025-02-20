@@ -58,8 +58,27 @@ export class DeliveryLocationDto {
   country: string;
 }
 
+export class DeliveryLocationUpdateDto {
+  @ApiProperty({ description: 'Latitude of the location' })
+  @IsNumber()
+  latitude: number;
+
+  @ApiProperty({ description: 'Longitude of the location' })
+  @IsNumber()
+  longitude: number;
+
+  @ApiProperty({ description: 'Address of the location' })
+  @IsString()
+  address: string;
+}
+
 export class UpdateDeliveryDto {
-  @ApiPropertyOptional({ description: 'Current status of delivery', enum: DeliveryStatus })
+  @ApiPropertyOptional({ description: 'Tracking number' })
+  @IsOptional()
+  @IsString()
+  trackingNumber?: string;
+
+  @ApiPropertyOptional({ description: 'Status of the delivery', enum: DeliveryStatus })
   @IsOptional()
   @IsEnum(DeliveryStatus)
   status?: DeliveryStatus;
@@ -69,31 +88,26 @@ export class UpdateDeliveryDto {
   @IsString()
   statusNotes?: string;
 
-  @ApiPropertyOptional({ description: 'Location at the time of status update' })
+  @ApiPropertyOptional({ description: 'Location information for the status update' })
   @IsOptional()
-  @IsDate()
+  @ValidateNested()
+  @Type(() => DeliveryLocationUpdateDto)
   statusLocation?: {
     coordinates: [number, number];
     address: string;
   };
-
-  @ApiPropertyOptional({ description: 'Tracking number' })
-  @IsOptional()
-  @IsString()
-  trackingNumber?: string;
 
   @ApiPropertyOptional({ description: 'Whether the delivery has been reconciled' })
   @IsOptional()
   @IsBoolean()
   isReconciled?: boolean;
 
-  @ApiPropertyOptional({ description: 'Date of reconciliation' })
+  @ApiPropertyOptional({ description: 'When the delivery was reconciled' })
   @IsOptional()
-  @Type(() => Date)
   @IsDate()
   reconciledAt?: Date;
 
-  @ApiPropertyOptional({ description: 'User who reconciled the delivery' })
+  @ApiPropertyOptional({ description: 'Who reconciled the delivery' })
   @IsOptional()
   @IsString()
   reconciledBy?: string;
@@ -108,6 +122,11 @@ export class CreateDeliveryDto {
   @ApiProperty({ description: 'Customer name' })
   @IsString()
   customerName: string;
+
+  @ApiPropertyOptional({ description: 'Tracking number' })
+  @IsOptional()
+  @IsString()
+  trackingNumber?: string;
 
   @ApiProperty({ description: 'Customer email' })
   @IsEmail()

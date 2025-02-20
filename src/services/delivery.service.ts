@@ -86,7 +86,7 @@ export class DeliveryService {
           select: 'name code phone address status rating'
         })
         .populate({
-          path: 'items.productId',
+          path: 'items.itemId',
           select: 'name sku description unitPrice category currentStock image'
         })
         .sort({ createdAt: -1 })
@@ -111,7 +111,7 @@ export class DeliveryService {
         select: 'name code phone address status rating'
       })
       .populate({
-        path: 'items.productId',
+        path: 'items.itemId',
         select: 'name sku description unitPrice category currentStock image'
       })
       .exec();
@@ -140,6 +140,10 @@ export class DeliveryService {
     const updatedDelivery = await this.deliveryModel
       .findByIdAndUpdate(id, updateDeliveryDto, { new: true, runValidators: true })
       .populate('deliveryCompanyId', 'name code phone')
+      .populate({
+        path: 'items.itemId',
+        select: 'name sku description unitPrice category currentStock image'
+      })
       .exec();
 
     if (!updatedDelivery) {
@@ -188,6 +192,10 @@ export class DeliveryService {
     return this.deliveryModel
       .findByIdAndUpdate(id, updateData, { new: true, runValidators: true })
       .populate('deliveryCompanyId', 'name code phone')
+      .populate({
+        path: 'items.itemId',
+        select: 'name sku description unitPrice category currentStock image'
+      })
       .exec();
   }
 
@@ -222,6 +230,10 @@ export class DeliveryService {
       const populatedDeliveries = await this.deliveryModel
         .find({ _id: { $in: createdDeliveries.map(d => d._id) } })
         .populate('deliveryCompanyId', 'name code phone')
+        .populate({
+          path: 'items.itemId',
+          select: 'name sku description unitPrice category currentStock image'
+        })
         .exec();
 
       return populatedDeliveries;
@@ -272,6 +284,10 @@ export class DeliveryService {
       return this.deliveryModel
         .find({ _id: { $in: updatedDeliveries.map(d => d._id) } })
         .populate('deliveryCompanyId', 'name code phone')
+        .populate({
+          path: 'items.itemId',
+          select: 'name sku description unitPrice category currentStock image'
+        })
         .exec();
     } catch (error) {
       await session.abortTransaction();
@@ -310,6 +326,10 @@ export class DeliveryService {
       { new: true, runValidators: true }
     )
     .populate('deliveryCompanyId', 'name code phone')
+    .populate({
+      path: 'items.itemId',
+      select: 'name sku description unitPrice category currentStock image'
+    })
     .exec();
 
     if (!updatedDelivery) {
@@ -340,6 +360,10 @@ export class DeliveryService {
       { new: true, runValidators: true }
     )
     .populate('deliveryCompanyId', 'name code phone')
+    .populate({
+      path: 'items.itemId',
+      select: 'name sku description unitPrice category currentStock image'
+    })
     .exec();
 
     if (!updatedDelivery) {
