@@ -37,8 +37,12 @@ export class InventoryController {
     description: 'Returns a paginated list of inventory items',
     type: InventoryItem 
   })
-  findAll(@Query(ValidationPipe) query: InventoryQueryDto) {
-    return this.inventoryService.findAll(query);
+  async findAll(@Query(ValidationPipe) query: InventoryQueryDto) {
+    console.log('Controller: Received query parameters:', query);
+    const result = await this.inventoryService.findAll(query);
+    console.log('Controller: Total items returned:', result.items.length);
+    console.log('Controller: Total count:', result.total);
+    return result;
   }
 
   @Put(':id')
