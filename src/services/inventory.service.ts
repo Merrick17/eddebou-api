@@ -63,24 +63,43 @@ export class InventoryService {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
         { sku: { $regex: search, $options: 'i' } },
+        { barcode: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
       ];
     }
     if (category) filter.category = category;
     if (status) filter.status = status;
 
+    console.log('Query filters:', filter);
+    console.log('Skip:', skip, 'Limit:', limit);
+
+    // First, let's count all documents without any conditions
+    const totalDocsInCollection = await this.inventoryModel.countDocuments({});
+    console.log('Total documents in collection (no filters):', totalDocsInCollection);
+
     const [items, total] = await Promise.all([
       this.inventoryModel
         .find(filter)
+        // Temporarily remove select to see all fields
+        .populate('supplier')
+        .populate('location')
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
+        .lean()
         .exec(),
       this.inventoryModel.countDocuments(filter),
     ]);
+
+    console.log('Found items count:', items.length);
+    console.log('Total documents with filters:', total);
+    console.log('Sample of first item fields:', Object.keys(items[0] || {}));
 
     return {
       items,
       total,
       page,
+      limit,
       totalPages: Math.ceil(total / limit),
     };
   }
@@ -109,6 +128,8 @@ export class InventoryService {
           { $set: { ...updateData, updatedAt: new Date() } },
           { new: true, runValidators: true }
         )
+        .populate('supplier', '_id name email phone address')
+        .populate('location', '_id name address type')
         .exec();
 
       if (!updated) {
@@ -150,7 +171,11 @@ export class InventoryService {
   }
 
   async findById(id: string): Promise<InventoryItem> {
-    const item = await this.inventoryModel.findById(id).exec();
+    const item = await this.inventoryModel
+      .findById(id)
+      .populate('supplier', '_id name email phone address')
+      .populate('location', '_id name address type')
+      .exec();
     if (!item) {
       throw new NotFoundException(`Inventory item with ID ${id} not found`);
     }

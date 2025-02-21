@@ -197,30 +197,42 @@ export class AuthService {
   }
 
   async refreshToken(refreshToken: string) {
+    console.log('[Auth Service] Refresh token request received:', refreshToken.substring(0, 20) + '...');
+    
     try {
       // Verify refresh token
+      console.log('[Auth Service] Attempting to verify JWT token');
       const payload = this.jwtService.verify(refreshToken, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
       });
+      console.log('[Auth Service] JWT verification successful:', { userId: payload.sub, type: payload.type });
 
       if (payload.type !== 'refresh') {
+        console.log('[Auth Service] Invalid token type:', payload.type);
         throw new UnauthorizedException('Invalid token type');
       }
 
       // Check if refresh token is valid in session store
+      console.log('[Auth Service] Looking up session for refresh token');
       const session = await this.sessionService.findByRefreshToken(refreshToken);
       if (!session) {
+        console.log('[Auth Service] No session found for refresh token');
         throw new UnauthorizedException('Invalid refresh token');
       }
+      console.log('[Auth Service] Session found:', { sessionToken: session.token });
 
       // Verify user still exists and is active
+      console.log('[Auth Service] Looking up user:', payload.sub);
       const user = await this.userService.findById(payload.sub);
       if (!user) {
+        console.log('[Auth Service] User not found:', payload.sub);
         await this.sessionService.invalidateSession(session.token);
         throw new UnauthorizedException('User no longer exists');
       }
+      console.log('[Auth Service] User found:', { userId: user.id, isActive: user.isActive, status: user.status });
 
       if (!user.isActive || user.status === 'inactive') {
+        console.log('[Auth Service] User account is inactive:', { userId: user.id, isActive: user.isActive, status: user.status });
         await this.sessionService.invalidateSession(session.token);
         throw new UnauthorizedException('User account is inactive');
       }
